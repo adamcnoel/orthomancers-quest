@@ -64,8 +64,6 @@ Supplemental material can later come from broader lists of commonly misspelled E
 
 Words are stored as reusable content records in `words.js`. Questions are generated dynamically from those records rather than authored as fixed A/B/C/D question blocks.
 
-The move from the 30-word mechanics prototype to the real HSPT corpus intentionally bumped the local save key to `orthomancerSave:v2`, so prototype mastery does not carry into the actual study set.
-
 ## Corpus validation
 
 Run:
@@ -78,20 +76,51 @@ The validator checks for duplicate target words, missing or duplicate misspellin
 
 Content quality still requires human review: a validator can confirm structural correctness, but not whether every distractor is genuinely plausible or every sentence sounds natural. The current HSPT corpus should therefore be treated as a strong first pass pending play-through review and targeted cleanup of any questionable entries.
 
+## State model
+
+The game deliberately separates three kinds of state:
+
+- **Persistent state** — word mastery plus durable preferences such as Standard/Advanced mode. This is what is written to `localStorage`.
+- **Session state** — answered count, session accuracy, and streak. This resets when the page session starts over.
+- **Flow state** — the active question and logical phase (`idle`, `question`, `word-selection`, or `feedback`), plus the current selection/feedback payload. This is intentionally not persisted.
+
+`game-core.js` owns question generation, mastery, scoring, save parsing/serialization, and state transitions. `app.js` is primarily DOM rendering and event wiring. The rendered DOM is not treated as resumable application state.
+
+The current save key is `orthomancerSave:v3`. Existing `v2` mastery is read and migrated forward automatically, so the state refactor does not intentionally wipe current HSPT progress.
+
+Cold-start/resume behavior is being tracked separately until the equivalent Etymancer's Quest work is finalized; Orthomancer should reuse that settled pattern rather than inventing a competing one.
+
 ## Mastery
 
 The game uses the same general adaptive-learning idea as Etymancer's Quest:
 
 **New → Learning → Familiar → Mastered**
 
-The prototype tracks two distinct kinds of evidence for each word:
+The current scheduler tracks two distinct kinds of evidence for each word:
 
 - recognizing a plausible misspelling as wrong
 - recognizing the correctly spelled form as correct, especially through "No mistakes" questions
 
-A word cannot advance to the higher mastery stages from only one kind of evidence. Lower-mastery and previously missed words receive more question weight. HSPT-core records also receive the strongest source weighting.
+A word cannot become Mastered from only one kind of evidence. Lower-mastery and previously missed words receive more question weight. Mastered words remain eligible for occasional review.
 
-Progress and the selected mode are stored in browser `localStorage`.
+## Testing and playthrough validation
+
+Run the deterministic state/mastery tests and simulated long-run playthrough with:
+
+```bash
+node tests/run.js
+```
+
+The test suite covers seeded question generation, Standard/Advanced transitions, duplicate-action protection, mode switching without replacing a question, mastery progression/demotion, persistence boundaries, and save parsing.
+
+The playthrough validator runs thousands of generated questions against the real corpus. It checks broad HSPT exposure, approximate D-question frequency, mastery progression, mixed-accuracy behavior, increased exposure for a repeatedly missed target, and the rule that one-sided evidence cannot produce Mastered status. The script prints aggregate statistics so scheduler changes can be evaluated rather than accepted on pass/fail alone.
+
+CI runs both:
+
+```bash
+node tools/validate-corpus.js
+node tests/run.js
+```
 
 ## Running it
 
@@ -107,15 +136,19 @@ The app is plain HTML/CSS/JavaScript and is intended for eventual GitHub Pages d
 
 ## Current files
 
-- `index.html` — prototype UI
+- `index.html` — prototype UI and versioned asset loading
 - `style.css` — Corrupted Archive visual treatment
-- `app.js` — question generation, Standard/Advanced interaction, mastery, adaptive weighting, and local persistence
+- `app.js` — DOM rendering and browser interaction
+- `game-core.js` — deterministic question/mastery/state engine shared by browser and tests
 - `words.js` — 140-word HSPT core corpus
 - `data/hspt-source.txt` — canonical transcription of the supplied HSPT word list
 - `tools/validate-corpus.js` — structural corpus validator
+- `tests/core-state.js` — deterministic state/mastery regression tests
+- `tests/playthrough.js` — long-run scheduler/playthrough validation
+- `tests/run.js` — simple local test runner
 
 ## Status
 
 **First playable prototype is implemented and now uses the actual HSPT core list.**
 
-Immediate next priorities are content review/cleanup, evaluating the mastery scheduler against the larger corpus, deciding whether the no-mistake rate feels right in real use, and then expanding with supplemental high-value spelling material. Archive rooms and the retro-terminal visual refinement remain deliberately separate backlog items rather than blocking mechanics work.
+Current mechanics work is focused on making state transitions and scheduler behavior deterministic and testable before adding more progression or navigation. Archive rooms, supplemental corpus growth, and the retro-terminal visual refinement remain separate backlog items rather than blocking that foundation.
