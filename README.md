@@ -76,7 +76,7 @@ node tools/validate-corpus.js
 
 The validator checks for duplicate target words, missing or duplicate misspellings, sentences that do not contain the target word, duplicate sentences, accidental use of a misspelled form in a correct sentence, source-tag problems, and missing HSPT entries.
 
-Content quality still requires human review: a validator can confirm structural correctness, but not whether every distractor is genuinely plausible or every sentence sounds natural.
+Content quality still requires human review: a validator can confirm structural correctness, but not whether every distractor is genuinely plausible or every sentence sounds natural. The current HSPT corpus should therefore be treated as a strong first pass pending play-through review and targeted cleanup of any questionable entries.
 
 ## Mastery
 
