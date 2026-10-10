@@ -12,7 +12,15 @@ The player is an **Orthomancer charged with restoring a vast corrupted archive**
 
 Each spelling question represents a fragment of damaged text. Correct answers restore the archive. Mastering words permanently stabilizes portions of the collection and advances the player deeper into the library.
 
-The theme should support the study mechanic rather than obscure it. Sentence reading and spelling recognition remain the center of the game; progression, streaks, restoration effects, archive rooms, books, and other rewards provide the sense of forward motion.
+The theme should support the study mechanic rather than obscure it. Sentence reading and spelling recognition remain the center of the game.
+
+### Prototype scope
+
+The first playable version intentionally does **not** implement archive rooms yet. It runs as a continuous study loop:
+
+**question → answer → feedback → next question**
+
+A lightweight **Archive restoration** meter reflects mastery progress. A later version will divide the archive into rooms or wings with explicit restoration targets and a finite completion goal. That progression layer will use the same per-word mastery data rather than replacing the study loop.
 
 ## Core idea
 
@@ -25,15 +33,15 @@ The player chooses:
 
 The misspellings should be realistic, common errors rather than nonsense typos. The vocabulary and sentence quality should be appropriate for roughly high-school-level study, with HSPT-relevant words prioritized above the broader spelling corpus.
 
-## Planned difficulty modes
+## Difficulty modes
 
 ### Standard
 
-Choose **A, B, C, or D**.
+Choose **A, B, C, or D**. The answer is scored immediately.
 
 ### Advanced
 
-Choose **A, B, C, or D**. If A-C is selected, the player must then click the specific word they believe is misspelled.
+Choose **A, B, C, or D**. If A–C is selected, the player must then click the specific word they believe is misspelled. Both the sentence and the word must be correct.
 
 A future harder mode may require choosing or entering the correct spelling after identifying the error.
 
@@ -41,40 +49,54 @@ A future harder mode may require choosing or entering the correct spelling after
 
 The HSPT word list is the primary curriculum. Supplemental material can come from broader lists of commonly misspelled English words and other suitable spelling resources.
 
-Words should be stored as reusable content records with:
+Words are stored as reusable content records with:
 
 - correct spelling
 - one or more plausible misspellings
 - multiple natural example sentences
-- source tags such as `hspt` or `common-misspelling`
+- source tags such as `hspt-core` or `common-misspelling`
 - optional difficulty and spelling-pattern tags
 
-Questions should be generated dynamically from those records rather than authored as fixed A/B/C/D question blocks.
+Questions are generated dynamically from those records rather than authored as fixed A/B/C/D question blocks.
+
+The current playable build contains a **30-word provisional prototype corpus** so the game mechanics can be tested before the user-supplied HSPT list is imported. Those words are deliberately tagged `prototype`, not `hspt-core`.
 
 ## Mastery
 
-The game should reuse the general adaptive-learning approach from Etymancer's Quest:
+The game uses the same general adaptive-learning idea as Etymancer's Quest:
 
 **New → Learning → Familiar → Mastered**
 
-HSPT words should be strongly prioritized until they are well learned. The system should separately reinforce both:
+The prototype already tracks two distinct kinds of evidence for each word:
 
 - recognizing a plausible misspelling as wrong
-- recognizing the correctly spelled form as correct, including in "No mistakes" questions
+- recognizing the correctly spelled form as correct, especially through "No mistakes" questions
 
-Within the archive theme, mastery should have visible permanence: a mastered word helps stabilize or restore part of the archive rather than merely increasing a number.
+A word cannot advance to the higher mastery stages from only one kind of evidence. Lower-mastery and previously missed words receive more question weight. The selection engine also already supports a stronger weighting boost for records tagged `hspt-core`, ready for the HSPT list.
 
-## Technical direction
+Progress and the selected mode are stored in browser `localStorage`.
 
-Like Etymancer's Quest, this should remain deliberately simple:
+## Running it
 
-- static HTML/CSS/JavaScript
-- no server-side processing
-- no build step if practical
-- progress stored locally in the browser
-- installable as a PWA
-- works well on desktop and mobile
+No build step or server-side application is required. Serve the repository with any simple static web server, for example:
+
+```bash
+python3 -m http.server
+```
+
+Then open `http://localhost:8000`.
+
+The app is plain HTML/CSS/JavaScript and is intended for eventual GitHub Pages deployment and PWA installation.
+
+## Current files
+
+- `index.html` — prototype UI
+- `style.css` — Corrupted Archive visual treatment
+- `app.js` — question generation, Standard/Advanced interaction, mastery, adaptive weighting, and local persistence
+- `words.js` — provisional 30-word spelling corpus
 
 ## Status
 
-Design and backlog planning phase. The **Corrupted Archive** theme is selected. The initial prototype will follow after the core mechanics, mastery behavior, content schema, and archive-progression model are defined.
+**First playable prototype is implemented.**
+
+Immediate next priorities are to import the actual HSPT core list, validate/expand the corpus, test the mastery weighting against real study sessions, and then decide how much game progression to layer on top. Archive rooms are intentionally deferred to the dedicated backlog item rather than blocking the prototype.
