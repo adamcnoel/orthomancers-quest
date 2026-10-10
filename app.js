@@ -1,4 +1,5 @@
 (() => {
+  const APP_VERSION = "0.2.0";
   const SAVE_KEY = "orthomancerSave:v2";
   const STAGES = ["New", "Learning", "Familiar", "Mastered"];
   const NO_MISTAKE_RATE = 0.25;
@@ -362,6 +363,8 @@
     els.masteredTotal = $("mastered-total");
     els.restorationPercent = $("restoration-percent");
     els.restorationFill = $("restoration-fill");
+    els.buildVersion = $("build-version");
+    els.corpusStatus = $("corpus-status");
 
     els.nextButton.addEventListener("click", renderQuestion);
     els.modeStandard.addEventListener("click", () => {
@@ -389,6 +392,9 @@
   function init() {
     load();
     bind();
+    els.buildVersion.textContent = `v${APP_VERSION}`;
+    const hsptCount = SPELLING_WORDS.filter((entry) => entry.sources.includes("hspt-core")).length;
+    els.corpusStatus.textContent = `${SPELLING_WORDS.length} words loaded · ${hsptCount} HSPT-core`;
     setMode(state.mode);
     SPELLING_WORDS.forEach((entry) => masteryFor(entry.word));
     renderQuestion();
