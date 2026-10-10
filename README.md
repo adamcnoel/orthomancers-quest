@@ -45,21 +45,36 @@ Choose **A, B, C, or D**. If A–C is selected, the player must then click the s
 
 A future harder mode may require choosing or entering the correct spelling after identifying the error.
 
-## Content strategy
+## HSPT core corpus
 
-The HSPT word list is the primary curriculum. Supplemental material can come from broader lists of commonly misspelled English words and other suitable spelling resources.
+The user-supplied HSPT spelling list is now the primary curriculum.
 
-Words are stored as reusable content records with:
+The current corpus contains **140 HSPT-core words**, transcribed from the supplied study-guide screenshots. Each record currently has:
 
-- correct spelling
-- one or more plausible misspellings
-- multiple natural example sentences
-- source tags such as `hspt-core` or `common-misspelling`
-- optional difficulty and spelling-pattern tags
+- the correct spelling
+- one or more curated plausible misspellings
+- at least two natural example sentences
+- the source tag `hspt-core`
 
-Questions are generated dynamically from those records rather than authored as fixed A/B/C/D question blocks.
+That currently works out to **280 sentence variants** and **274 curated misspelling variants** across the 140 words.
 
-The current playable build contains a **30-word provisional prototype corpus** so the game mechanics can be tested before the user-supplied HSPT list is imported. Those words are deliberately tagged `prototype`, not `hspt-core`.
+The original transcription is preserved in `data/hspt-source.txt` so the canonical source list can be compared against the playable corpus.
+
+Supplemental material can later come from broader lists of commonly misspelled English words and other suitable spelling resources, but HSPT-core material remains the highest priority.
+
+Words are stored as reusable content records in `words.js`. Questions are generated dynamically from those records rather than authored as fixed A/B/C/D question blocks.
+
+## Corpus validation
+
+Run:
+
+```bash
+node tools/validate-corpus.js
+```
+
+The validator checks for duplicate target words, missing or duplicate misspellings, sentences that do not contain the target word, duplicate sentences, accidental use of a misspelled form in a correct sentence, source-tag problems, and missing HSPT entries.
+
+Content quality still requires human review: a validator can confirm structural correctness, but not whether every distractor is genuinely plausible or every sentence sounds natural.
 
 ## Mastery
 
@@ -67,24 +82,24 @@ The game uses the same general adaptive-learning idea as Etymancer's Quest:
 
 **New → Learning → Familiar → Mastered**
 
-The prototype already tracks two distinct kinds of evidence for each word:
+The prototype tracks two distinct kinds of evidence for each word:
 
 - recognizing a plausible misspelling as wrong
 - recognizing the correctly spelled form as correct, especially through "No mistakes" questions
 
-A word cannot advance to the higher mastery stages from only one kind of evidence. Lower-mastery and previously missed words receive more question weight. The selection engine also already supports a stronger weighting boost for records tagged `hspt-core`, ready for the HSPT list.
+A word cannot advance to the higher mastery stages from only one kind of evidence. Lower-mastery and previously missed words receive more question weight. HSPT-core records also receive the strongest source weighting.
 
 Progress and the selected mode are stored in browser `localStorage`.
 
 ## Running it
 
-No build step or server-side application is required. Serve the repository with any simple static web server, for example:
+No build step or server-side application is required. Serve the repository with any simple static web server. To avoid localhost cache/PWA collisions with Etymancer's Quest, use a different port for Orthomancer during local development, for example:
 
 ```bash
-python3 -m http.server
+python3 -m http.server 8001
 ```
 
-Then open `http://localhost:8000`.
+Then open `http://localhost:8001`.
 
 The app is plain HTML/CSS/JavaScript and is intended for eventual GitHub Pages deployment and PWA installation.
 
@@ -93,10 +108,12 @@ The app is plain HTML/CSS/JavaScript and is intended for eventual GitHub Pages d
 - `index.html` — prototype UI
 - `style.css` — Corrupted Archive visual treatment
 - `app.js` — question generation, Standard/Advanced interaction, mastery, adaptive weighting, and local persistence
-- `words.js` — provisional 30-word spelling corpus
+- `words.js` — 140-word HSPT core corpus
+- `data/hspt-source.txt` — canonical transcription of the supplied HSPT word list
+- `tools/validate-corpus.js` — structural corpus validator
 
 ## Status
 
-**First playable prototype is implemented.**
+**First playable prototype is implemented and now uses the actual HSPT core list.**
 
-Immediate next priorities are to import the actual HSPT core list, validate/expand the corpus, test the mastery weighting against real study sessions, and then decide how much game progression to layer on top. Archive rooms are intentionally deferred to the dedicated backlog item rather than blocking the prototype.
+Immediate next priorities are content review/cleanup, evaluating the mastery scheduler against the larger corpus, deciding whether the no-mistake rate feels right in real use, and then expanding with supplemental high-value spelling material. Archive rooms and the retro-terminal visual refinement remain deliberately separate backlog items rather than blocking mechanics work.
