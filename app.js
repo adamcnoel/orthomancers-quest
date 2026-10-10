@@ -1,5 +1,5 @@
 (() => {
-  const SAVE_KEY = "orthomancerSave:v1";
+  const SAVE_KEY = "orthomancerSave:v2";
   const STAGES = ["New", "Learning", "Familiar", "Mastered"];
   const NO_MISTAKE_RATE = 0.25;
 
@@ -139,7 +139,7 @@
 
   function save() {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
-      version: 1,
+      version: 2,
       mode: state.mode,
       mastery: state.mastery
     }));
