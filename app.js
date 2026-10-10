@@ -1,16 +1,13 @@
 (() => {
-  const APP_VERSION = "0.2.1";
-  const SAVE_KEY = "orthomancerSave:v2";
-  const STAGES = ["New", "Learning", "Familiar", "Mastered"];
-  const NO_MISTAKE_RATE = 0.25;
+  const APP_VERSION = "0.3.0";
+  const SAVE_KEY = "orthomancerSave:v3";
+  const LEGACY_SAVE_KEYS = ["orthomancerSave:v2"];
+  const Core = window.OrthomancerCore;
 
   const state = {
-    mode: "standard",
-    mastery: {},
-    session: { answered: 0, correct: 0, streak: 0 },
-    question: null,
-    phase: "question",
-    selectedSentence: null
+    persistent: null,
+    session: Core.createSessionState(),
+    flow: Core.createFlowState()
   };
 
   const els = {};
@@ -19,149 +16,23 @@
     return document.getElementById(id);
   }
 
-  function randomItem(items) {
-    return items[Math.floor(Math.random() * items.length)];
-  }
-
-  function escapeRegex(value) {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  }
-
-  function masteryFor(word) {
-    if (!state.mastery[word]) {
-      state.mastery[word] = {
-        stage: 0,
-        correctForm: 0,
-        errorForm: 0,
-        misses: 0,
-        lastSeen: 0
-      };
-    }
-    return state.mastery[word];
-  }
-
-  function recalculateStage(record) {
-    const total = record.correctForm + record.errorForm;
-    let stage = 0;
-    if (total >= 1) stage = 1;
-    if (total >= 3 && record.correctForm >= 1 && record.errorForm >= 1) stage = 2;
-    if (total >= 6 && record.correctForm >= 2 && record.errorForm >= 2) stage = 3;
-    record.stage = Math.min(record.stage + 1, stage);
-    if (record.stage === 0 && stage > 0) record.stage = stage;
-  }
-
-  function recordCorrect(word, evidence) {
-    const record = masteryFor(word);
-    if (evidence === "correct") record.correctForm += 1;
-    if (evidence === "error") record.errorForm += 1;
-    record.lastSeen = Date.now();
-    recalculateStage(record);
-  }
-
-  function recordMiss(word) {
-    const record = masteryFor(word);
-    record.misses += 1;
-    record.lastSeen = Date.now();
-    record.stage = Math.max(0, record.stage - 1);
-  }
-
-  function weightedPick(pool) {
-    const weighted = pool.map((entry) => {
-      const record = masteryFor(entry.word);
-      const stageWeights = [6, 5, 2.5, 0.8];
-      const hsptBoost = entry.sources.includes("hspt-core") ? 3 : 1;
-      const missBoost = Math.min(2.5, 1 + record.misses * 0.2);
-      return { entry, weight: stageWeights[record.stage] * hsptBoost * missBoost };
-    });
-
-    const total = weighted.reduce((sum, item) => sum + item.weight, 0);
-    let roll = Math.random() * total;
-    for (const item of weighted) {
-      roll -= item.weight;
-      if (roll <= 0) return item.entry;
-    }
-    return weighted[weighted.length - 1].entry;
-  }
-
-  function pickThreeTargets() {
-    const available = [...SPELLING_WORDS];
-    const result = [];
-    while (result.length < 3) {
-      const picked = weightedPick(available);
-      result.push(picked);
-      available.splice(available.indexOf(picked), 1);
-    }
-    return result;
-  }
-
-  function replaceTarget(sentence, correctWord, replacement) {
-    const pattern = new RegExp(`\\b${escapeRegex(correctWord)}\\b`, "i");
-    return sentence.replace(pattern, (matched) => {
-      if (matched[0] === matched[0].toUpperCase()) {
-        return replacement[0].toUpperCase() + replacement.slice(1);
+  function loadPersistent() {
+    let raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) {
+      for (const key of LEGACY_SAVE_KEYS) {
+        raw = localStorage.getItem(key);
+        if (raw) break;
       }
-      return replacement;
-    });
-  }
-
-  function buildQuestion() {
-    const targets = pickThreeTargets();
-    const hasError = Math.random() >= NO_MISTAKE_RATE;
-    const errorIndex = hasError ? Math.floor(Math.random() * 3) : -1;
-
-    const sentences = targets.map((target, index) => {
-      const original = randomItem(target.sentences);
-      const isCorrupt = index === errorIndex;
-      const misspelling = isCorrupt ? randomItem(target.misspellings) : null;
-      const display = isCorrupt
-        ? replaceTarget(original, target.word, misspelling)
-        : original;
-      return { target, original, display, isCorrupt, misspelling };
-    });
-
-    return {
-      sentences,
-      hasError,
-      errorIndex,
-      correctChoice: hasError ? errorIndex : 3
-    };
-  }
-
-  function load() {
-    try {
-      const parsed = JSON.parse(localStorage.getItem(SAVE_KEY));
-      if (!parsed) return;
-      if (parsed.mastery && typeof parsed.mastery === "object") state.mastery = parsed.mastery;
-      if (parsed.mode === "standard" || parsed.mode === "advanced") state.mode = parsed.mode;
-    } catch (error) {
-      console.warn("Ignoring unreadable Orthomancer save.", error);
     }
+    state.persistent = Core.parsePersistent(raw);
   }
 
-  function save() {
-    localStorage.setItem(SAVE_KEY, JSON.stringify({
-      version: 2,
-      mode: state.mode,
-      mastery: state.mastery
-    }));
-  }
-
-  function stageSummary() {
-    const counts = [0, 0, 0, 0];
-    let totalPoints = 0;
-    SPELLING_WORDS.forEach((entry) => {
-      const stage = masteryFor(entry.word).stage;
-      counts[stage] += 1;
-      totalPoints += stage;
-    });
-    return {
-      counts,
-      percent: Math.round((totalPoints / (SPELLING_WORDS.length * 3)) * 100)
-    };
+  function savePersistent() {
+    localStorage.setItem(SAVE_KEY, Core.serializePersistent(state.persistent));
   }
 
   function updateStats() {
-    const summary = stageSummary();
+    const summary = Core.stageSummary(SPELLING_WORDS, state.persistent);
     const accuracy = state.session.answered
       ? Math.round((state.session.correct / state.session.answered) * 100)
       : 0;
@@ -174,32 +45,41 @@
     els.restorationFill.style.width = `${summary.percent}%`;
   }
 
-  function updatePromptForMode() {
-    if (state.phase !== "question") return;
-    els.prompt.textContent = state.mode === "advanced"
-      ? "Which fragment is corrupted? If you choose A–C, identify the word."
-      : "Which fragment contains a spelling error?";
+  function updateModeButtons() {
+    const mode = state.persistent.mode;
+    els.modeStandard.classList.toggle("active", mode === "standard");
+    els.modeAdvanced.classList.toggle("active", mode === "advanced");
+  }
+
+  function updatePrompt() {
+    if (state.flow.phase === "word-selection") {
+      els.prompt.textContent = "Now click the word you believe is spelled incorrectly.";
+      return;
+    }
+    if (state.flow.phase === "question") {
+      els.prompt.textContent = state.persistent.mode === "advanced"
+        ? "Which fragment is corrupted? If you choose A–C, identify the word."
+        : "Which fragment contains a spelling error?";
+    }
   }
 
   function setMode(mode) {
-    state.mode = mode;
-    els.modeStandard.classList.toggle("active", mode === "standard");
-    els.modeAdvanced.classList.toggle("active", mode === "advanced");
-    updatePromptForMode();
-    save();
+    if (!Core.setMode(state.persistent, mode)) return;
+    updateModeButtons();
+    updatePrompt();
+    savePersistent();
   }
 
   function renderQuestion() {
-    state.question = buildQuestion();
-    state.phase = "question";
-    state.selectedSentence = null;
-    updatePromptForMode();
+    const q = state.flow.question;
+    if (!q) return;
+
     els.feedback.className = "feedback hidden";
     els.feedback.innerHTML = "";
     els.nextButton.classList.add("hidden");
     els.sentences.innerHTML = "";
 
-    state.question.sentences.forEach((sentence, index) => {
+    q.sentences.forEach((sentence, index) => {
       const button = document.createElement("button");
       button.className = "sentence-choice";
       button.dataset.index = index;
@@ -216,20 +96,32 @@
     d.addEventListener("click", () => chooseSentence(3));
     els.sentences.appendChild(d);
 
+    updatePrompt();
     updateStats();
   }
 
-  function chooseSentence(index) {
-    if (state.phase !== "question") return;
+  function startQuestion() {
+    if (state.flow.phase === "idle") {
+      Core.startQuestion(state.flow, SPELLING_WORDS, state.persistent);
+    } else if (state.flow.phase === "feedback") {
+      Core.nextQuestion(state.flow, SPELLING_WORDS, state.persistent);
+    } else {
+      return;
+    }
+    renderQuestion();
+  }
 
-    if (state.mode === "advanced" && index < 3) {
-      state.phase = "word";
-      state.selectedSentence = index;
+  function chooseSentence(index) {
+    const result = Core.chooseSentence(state.flow, state.persistent, state.session, index);
+    if (!result.accepted) return;
+
+    if (result.pendingWord) {
       renderWordPicker(index);
       return;
     }
 
-    finishAnswer(index === state.question.correctChoice, index, null);
+    savePersistent();
+    renderFeedback();
   }
 
   function renderWordPicker(index) {
@@ -241,7 +133,7 @@
     const selected = buttons[index];
     selected.classList.add("selected");
     const textContainer = selected.querySelector(".sentence-text");
-    const sentence = state.question.sentences[index].display;
+    const sentence = state.flow.question.sentences[index].display;
     textContainer.innerHTML = "";
 
     const tokens = sentence.match(/\S+/g) || [];
@@ -258,89 +150,49 @@
       if (tokenIndex < tokens.length - 1) textContainer.append(" ");
     });
 
-    els.prompt.textContent = "Now click the word you believe is spelled incorrectly.";
-  }
-
-  function normalizedToken(token) {
-    return token.toLowerCase().replace(/^[^a-z]+|[^a-z]+$/g, "");
+    updatePrompt();
   }
 
   function chooseWord(token, button) {
-    if (state.phase !== "word") return;
-    const selected = state.question.sentences[state.selectedSentence];
-    const isCorrectSentence = state.selectedSentence === state.question.correctChoice;
-    const isCorrectWord = selected.misspelling
-      ? normalizedToken(token) === selected.misspelling.toLowerCase()
-      : false;
-    const correct = isCorrectSentence && isCorrectWord;
-    button.classList.add(correct ? "token-correct" : "token-wrong");
-    finishAnswer(correct, state.selectedSentence, token);
+    const result = Core.chooseWord(state.flow, state.persistent, state.session, token);
+    if (!result.accepted) return;
+    button.classList.add(result.correct ? "token-correct" : "token-wrong");
+    savePersistent();
+    renderFeedback();
   }
 
-  function correctLetter() {
-    return state.question.hasError
-      ? String.fromCharCode(65 + state.question.errorIndex)
-      : "D";
+  function correctLetter(feedback) {
+    return feedback.hasError ? String.fromCharCode(65 + feedback.correctChoice) : "D";
   }
 
-  function applyMastery(correct, chosenIndex) {
-    const q = state.question;
-    if (correct) {
-      if (q.hasError) {
-        recordCorrect(q.sentences[q.errorIndex].target.word, "error");
-      } else {
-        q.sentences.forEach((sentence) => recordCorrect(sentence.target.word, "correct"));
-      }
-      return;
-    }
-
-    if (q.hasError) {
-      recordMiss(q.sentences[q.errorIndex].target.word);
-    } else if (chosenIndex >= 0 && chosenIndex < 3) {
-      recordMiss(q.sentences[chosenIndex].target.word);
-    }
-  }
-
-  function finishAnswer(correct, chosenIndex, chosenWord) {
-    state.phase = "feedback";
-    state.session.answered += 1;
-    if (correct) {
-      state.session.correct += 1;
-      state.session.streak += 1;
-    } else {
-      state.session.streak = 0;
-    }
-
-    applyMastery(correct, chosenIndex);
-    save();
+  function renderFeedback() {
+    const feedback = state.flow.feedback;
+    if (!feedback || state.flow.phase !== "feedback") return;
 
     [...els.sentences.querySelectorAll(".sentence-choice")].forEach((button) => {
       button.disabled = true;
     });
 
-    const q = state.question;
     let heading;
     let detail;
 
-    if (correct && !q.hasError) {
+    if (feedback.correct && !feedback.hasError) {
       heading = "Archive fragment stable.";
       detail = "No corruption detected. All three sentences are spelled correctly.";
-    } else if (q.hasError) {
-      const bad = q.sentences[q.errorIndex];
-      const stage = STAGES[masteryFor(bad.target.word).stage];
-      if (correct) {
+    } else if (feedback.hasError) {
+      if (feedback.correct) {
         heading = "Corruption repaired.";
-        detail = `<strong>${bad.misspelling}</strong> → <strong>${bad.target.word}</strong> <span class="mastery-note">${stage}</span>`;
+        detail = `<strong>${feedback.badWord}</strong> → <strong>${feedback.correctWord}</strong> <span class="mastery-note">${feedback.stage}</span>`;
       } else {
-        heading = `The corrupted fragment was ${correctLetter()}.`;
-        detail = `<strong>${bad.misspelling}</strong> should be <strong>${bad.target.word}</strong>. <span class="mastery-note">${stage}</span>`;
+        heading = `The corrupted fragment was ${correctLetter(feedback)}.`;
+        detail = `<strong>${feedback.badWord}</strong> should be <strong>${feedback.correctWord}</strong>. <span class="mastery-note">${feedback.stage}</span>`;
       }
     } else {
       heading = "That fragment was clean.";
       detail = "The correct answer was D: there were no spelling mistakes.";
     }
 
-    els.feedback.className = `feedback ${correct ? "correct" : "wrong"}`;
+    els.feedback.className = `feedback ${feedback.correct ? "correct" : "wrong"}`;
     els.feedback.innerHTML = `<div class="feedback-heading">${heading}</div><div>${detail}</div>`;
     els.nextButton.classList.remove("hidden");
     els.nextButton.focus();
@@ -349,10 +201,9 @@
 
   function resetProgress() {
     if (!confirm("Reset all mastery progress for this browser?")) return;
-    state.mastery = {};
-    state.session = { answered: 0, correct: 0, streak: 0 };
-    save();
-    renderQuestion();
+    Core.resetAll(state.persistent, state.session, state.flow);
+    savePersistent();
+    startQuestion();
   }
 
   function bind() {
@@ -372,17 +223,17 @@
     els.buildVersion = $("build-version");
     els.corpusStatus = $("corpus-status");
 
-    els.nextButton.addEventListener("click", renderQuestion);
+    els.nextButton.addEventListener("click", startQuestion);
     els.modeStandard.addEventListener("click", () => setMode("standard"));
     els.modeAdvanced.addEventListener("click", () => setMode("advanced"));
     $("reset-progress").addEventListener("click", resetProgress);
 
     document.addEventListener("keydown", (event) => {
-      if (state.phase === "feedback" && event.key === "Enter") {
-        renderQuestion();
+      if (state.flow.phase === "feedback" && event.key === "Enter") {
+        startQuestion();
         return;
       }
-      if (state.phase !== "question") return;
+      if (state.flow.phase !== "question") return;
       const key = event.key.toLowerCase();
       const index = { a: 0, b: 1, c: 2, d: 3 }[key];
       if (index !== undefined) chooseSentence(index);
@@ -390,14 +241,15 @@
   }
 
   function init() {
-    load();
+    loadPersistent();
     bind();
     els.buildVersion.textContent = `v${APP_VERSION}`;
     const hsptCount = SPELLING_WORDS.filter((entry) => entry.sources.includes("hspt-core")).length;
     els.corpusStatus.textContent = `${SPELLING_WORDS.length} words loaded · ${hsptCount} HSPT-core`;
-    setMode(state.mode);
-    SPELLING_WORDS.forEach((entry) => masteryFor(entry.word));
-    renderQuestion();
+    updateModeButtons();
+    SPELLING_WORDS.forEach((entry) => Core.masteryFor(state.persistent, entry.word));
+    savePersistent();
+    startQuestion();
   }
 
   window.addEventListener("DOMContentLoaded", init);
