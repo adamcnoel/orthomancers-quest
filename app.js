@@ -216,10 +216,6 @@
     if (state.phase !== "question") return;
 
     if (state.mode === "advanced" && index < 3) {
-      if (index !== state.question.correctChoice) {
-        finishAnswer(false, index, null);
-        return;
-      }
       state.phase = "word";
       state.selectedSentence = index;
       renderWordPicker(index);
@@ -255,7 +251,7 @@
       if (tokenIndex < tokens.length - 1) textContainer.append(" ");
     });
 
-    els.prompt.textContent = "Now click the word that is spelled incorrectly.";
+    els.prompt.textContent = "Now click the word you believe is spelled incorrectly.";
   }
 
   function normalizedToken(token) {
@@ -264,8 +260,12 @@
 
   function chooseWord(token, button) {
     if (state.phase !== "word") return;
-    const sentence = state.question.sentences[state.selectedSentence];
-    const correct = normalizedToken(token) === sentence.misspelling.toLowerCase();
+    const selected = state.question.sentences[state.selectedSentence];
+    const isCorrectSentence = state.selectedSentence === state.question.correctChoice;
+    const isCorrectWord = selected.misspelling
+      ? normalizedToken(token) === selected.misspelling.toLowerCase()
+      : false;
+    const correct = isCorrectSentence && isCorrectWord;
     button.classList.add(correct ? "token-correct" : "token-wrong");
     finishAnswer(correct, state.selectedSentence, token);
   }
