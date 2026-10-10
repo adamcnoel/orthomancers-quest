@@ -64,6 +64,8 @@ Supplemental material can later come from broader lists of commonly misspelled E
 
 Words are stored as reusable content records in `words.js`. Questions are generated dynamically from those records rather than authored as fixed A/B/C/D question blocks.
 
+The move from the 30-word mechanics prototype to the real HSPT corpus intentionally bumped the local save key to `orthomancerSave:v2`, so prototype mastery does not carry into the actual study set.
+
 ## Corpus validation
 
 Run:
