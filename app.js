@@ -1,5 +1,5 @@
 (() => {
-  const APP_VERSION = "0.2.0";
+  const APP_VERSION = "0.2.1";
   const SAVE_KEY = "orthomancerSave:v2";
   const STAGES = ["New", "Learning", "Familiar", "Mastered"];
   const NO_MISTAKE_RATE = 0.25;
@@ -174,10 +174,18 @@
     els.restorationFill.style.width = `${summary.percent}%`;
   }
 
+  function updatePromptForMode() {
+    if (state.phase !== "question") return;
+    els.prompt.textContent = state.mode === "advanced"
+      ? "Which fragment is corrupted? If you choose A–C, identify the word."
+      : "Which fragment contains a spelling error?";
+  }
+
   function setMode(mode) {
     state.mode = mode;
     els.modeStandard.classList.toggle("active", mode === "standard");
     els.modeAdvanced.classList.toggle("active", mode === "advanced");
+    updatePromptForMode();
     save();
   }
 
@@ -185,9 +193,7 @@
     state.question = buildQuestion();
     state.phase = "question";
     state.selectedSentence = null;
-    els.prompt.textContent = state.mode === "advanced"
-      ? "Which fragment is corrupted? If you choose A–C, identify the word."
-      : "Which fragment contains a spelling error?";
+    updatePromptForMode();
     els.feedback.className = "feedback hidden";
     els.feedback.innerHTML = "";
     els.nextButton.classList.add("hidden");
@@ -367,14 +373,8 @@
     els.corpusStatus = $("corpus-status");
 
     els.nextButton.addEventListener("click", renderQuestion);
-    els.modeStandard.addEventListener("click", () => {
-      setMode("standard");
-      renderQuestion();
-    });
-    els.modeAdvanced.addEventListener("click", () => {
-      setMode("advanced");
-      renderQuestion();
-    });
+    els.modeStandard.addEventListener("click", () => setMode("standard"));
+    els.modeAdvanced.addEventListener("click", () => setMode("advanced"));
     $("reset-progress").addEventListener("click", resetProgress);
 
     document.addEventListener("keydown", (event) => {
