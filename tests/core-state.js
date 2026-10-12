@@ -74,6 +74,26 @@ function eq(a,b,message) { checks++; assert.strictEqual(a,b,message); }
   eq(Core.masteryFor(persistent,"example").stage,2,"miss demotes mastered word");
 })();
 
+(function reviewDebtRisesCapsAndRecovers() {
+  const persistent = Core.createPersistentState();
+  const record = Core.masteryFor(persistent,"example");
+  eq(record.reviewDebt,0,"new words start with no review debt");
+  Core.recordMiss(persistent,"example",1);
+  eq(record.reviewDebt,Core.REVIEW_DEBT_PER_MISS,"a miss adds review debt");
+  for (let i=0;i<20;i++) Core.recordMiss(persistent,"example",10+i);
+  eq(record.reviewDebt,Core.MAX_REVIEW_DEBT,"repeated misses cap review debt");
+  for (let i=0;i<20;i++) Core.recordCorrect(persistent,"example","error",100+i);
+  eq(record.reviewDebt,0,"successful evidence clears old review debt");
+  ok(record.misses > 0,"lifetime misses remain available as a statistic");
+})();
+
+(function legacySaveGetsReviewDebtDefault() {
+  const legacy = JSON.stringify({version:3,mode:"standard",mastery:{example:{stage:2,correctForm:2,errorForm:2,misses:9,lastSeen:123}}});
+  const loaded = Core.parsePersistent(legacy);
+  eq(loaded.mastery.example.reviewDebt,0,"legacy mastery without reviewDebt migrates safely");
+  eq(loaded.mastery.example.misses,9,"legacy lifetime miss count is preserved");
+})();
+
 (function transitionMatrix() {
   const modes = ["standard","advanced"];
   for (const mode of modes) {
@@ -101,10 +121,12 @@ function eq(a,b,message) { checks++; assert.strictEqual(a,b,message); }
 (function saveBoundary() {
   const persistent = Core.createPersistentState({mode:"advanced"});
   Core.recordCorrect(persistent,"example","error",1);
+  Core.recordMiss(persistent,"example",2);
   const raw = Core.serializePersistent(persistent);
   const loaded = Core.parsePersistent(raw);
   eq(loaded.mode,"advanced","mode persists");
   eq(loaded.mastery.example.errorForm,1,"mastery persists");
+  eq(loaded.mastery.example.reviewDebt,Core.REVIEW_DEBT_PER_MISS,"review debt persists");
   const flow = Core.createFlowState();
   eq(flow.phase,"idle","session flow is not part of persistent save");
 })();
