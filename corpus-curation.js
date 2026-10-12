@@ -81,6 +81,8 @@ const CORPUS_CURATIONS = {
   }
 };
 
+if (typeof globalThis !== "undefined") globalThis.CORPUS_CURATIONS = CORPUS_CURATIONS;
+
 for (const entry of SPELLING_WORDS) {
   const patch = CORPUS_CURATIONS[entry.word];
   if (!patch) continue;
