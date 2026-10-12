@@ -99,7 +99,7 @@ console.log(`Corpus records: ${words.length}`);
 console.log(`HSPT source words: ${hsptWords.length}`);
 console.log(`Sentences: ${words.reduce((n, w) => n + (w.sentences?.length || 0), 0)}`);
 console.log(`Misspellings: ${words.reduce((n, w) => n + (w.misspellings?.length || 0), 0)}`);
-console.log(`Curated overrides: ${Object.keys(context.CORPUS_CURATIONS || {}).length || 21}`);
+console.log(`Curated overrides: ${Object.keys(context.CORPUS_CURATIONS).length}`);
 
 if (warnings.length) {
   console.log(`\nWarnings (${warnings.length}):`);
