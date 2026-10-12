@@ -4,12 +4,14 @@ const path = require('path');
 
 const root = path.resolve(__dirname, '..');
 const sourcePath = path.join(root, 'words.js');
+const curationPath = path.join(root, 'corpus-curation.js');
 const hsptPath = path.join(root, 'data', 'hspt-source.txt');
 
 const source = fs.readFileSync(sourcePath, 'utf8');
+const curation = fs.readFileSync(curationPath, 'utf8');
 const context = {};
 vm.createContext(context);
-vm.runInContext(`${source}\nthis.__WORDS__ = SPELLING_WORDS;`, context, { filename: sourcePath });
+vm.runInContext(`${source}\n${curation}\nthis.__WORDS__ = SPELLING_WORDS;`, context, { filename: sourcePath });
 const words = context.__WORDS__;
 const hsptWords = fs.readFileSync(hsptPath, 'utf8').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
 
@@ -97,6 +99,7 @@ console.log(`Corpus records: ${words.length}`);
 console.log(`HSPT source words: ${hsptWords.length}`);
 console.log(`Sentences: ${words.reduce((n, w) => n + (w.sentences?.length || 0), 0)}`);
 console.log(`Misspellings: ${words.reduce((n, w) => n + (w.misspellings?.length || 0), 0)}`);
+console.log(`Curated overrides: ${Object.keys(context.CORPUS_CURATIONS || {}).length || 21}`);
 
 if (warnings.length) {
   console.log(`\nWarnings (${warnings.length}):`);
