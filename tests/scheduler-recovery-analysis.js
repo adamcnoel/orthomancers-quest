@@ -65,25 +65,28 @@ function run(seed) {
   const otherLate = WORDS.filter(w => !TROUBLE.has(w.word)).map(w => late.get(w.word));
   const troubleTotal = [...TROUBLE].map(w => total.get(w));
   const otherTotal = WORDS.filter(w => !TROUBLE.has(w.word)).map(w => total.get(w.word));
-  const troubleMisses = [...TROUBLE].map(w => Core.masteryFor(persistent, w).misses);
-  const troubleStages = [...TROUBLE].map(w => Core.masteryFor(persistent, w).stage);
+  const troubleRecords = [...TROUBLE].map(w => Core.masteryFor(persistent, w));
 
   return {
     seed,
     accuracy: session.correct / session.answered,
     totalRatio: mean(troubleTotal) / mean(otherTotal),
     lateRatio: mean(troubleLate) / mean(otherLate),
-    avgTroubleMisses: mean(troubleMisses),
-    masteredTrouble: troubleStages.filter(s => s === 3).length
+    avgTroubleMisses: mean(troubleRecords.map(r => r.misses)),
+    avgReviewDebt: mean(troubleRecords.map(r => r.reviewDebt)),
+    masteredTrouble: troubleRecords.filter(r => r.stage === 3).length
   };
 }
 
 const results = SEEDS.map(run);
-console.log("RECOVERED-TROUBLE DIAGNOSTIC (#31)");
+console.log("RECOVERED-TROUBLE REGRESSION (#5)");
 console.log(`First ${TROUBLE_PHASE_END} questions: designated trouble words answer at 45% when corrupted; afterward learner is 98% accurate.`);
 console.log(`Late exposure window: questions ${LATE_WINDOW_START}-${HORIZON}.`);
 for (const r of results) {
-  console.log(`  seed ${r.seed}: acc=${(r.accuracy*100).toFixed(1)}% totalTroubleRatio=${r.totalRatio.toFixed(2)} lateTroubleRatio=${r.lateRatio.toFixed(2)} avgHistoricalMisses=${r.avgTroubleMisses.toFixed(1)} masteredTrouble=${r.masteredTrouble}/${TROUBLE.size}`);
+  console.log(`  seed ${r.seed}: acc=${(r.accuracy*100).toFixed(1)}% totalTroubleRatio=${r.totalRatio.toFixed(2)} lateTroubleRatio=${r.lateRatio.toFixed(2)} avgHistoricalMisses=${r.avgTroubleMisses.toFixed(1)} avgReviewDebt=${r.avgReviewDebt.toFixed(2)} masteredTrouble=${r.masteredTrouble}/${TROUBLE.size}`);
+  assert.strictEqual(r.masteredTrouble, TROUBLE.size, `seed ${r.seed}: recovered trouble words should all be Mastered`);
+  assert.ok(r.lateRatio <= 1.20, `seed ${r.seed}: recovered words should return close to normal exposure; late ratio=${r.lateRatio.toFixed(2)}`);
+  assert.ok(r.avgReviewDebt <= 0.10, `seed ${r.seed}: old trouble debt should substantially clear; avg=${r.avgReviewDebt.toFixed(2)}`);
 }
 console.log(`  avg late trouble exposure ratio after recovery: ${mean(results.map(r => r.lateRatio)).toFixed(2)}`);
-console.log("Diagnostic purpose: quantify whether cumulative historical misses keep recovered words permanently overweighted.");
+console.log("PASS: historical misses no longer create permanent scheduler weight");

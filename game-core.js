@@ -5,6 +5,9 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   const STAGES = ["New", "Learning", "Familiar", "Mastered"];
   const NO_MISTAKE_RATE = 0.25;
+  const REVIEW_DEBT_PER_MISS = 0.4;
+  const REVIEW_DEBT_RECOVERY = 0.25;
+  const MAX_REVIEW_DEBT = 1.5;
 
   function createSeededRng(seed = 1) {
     let value = (seed >>> 0) || 1;
@@ -18,15 +21,26 @@
   }
 
   function blankMastery() {
-    return { stage: 0, correctForm: 0, errorForm: 0, misses: 0, lastSeen: 0 };
+    return { stage: 0, correctForm: 0, errorForm: 0, misses: 0, reviewDebt: 0, lastSeen: 0 };
+  }
+
+  function normalizeMasteryRecord(record) {
+    const normalized = record && typeof record === "object" ? record : {};
+    if (!Number.isFinite(normalized.stage)) normalized.stage = 0;
+    if (!Number.isFinite(normalized.correctForm)) normalized.correctForm = 0;
+    if (!Number.isFinite(normalized.errorForm)) normalized.errorForm = 0;
+    if (!Number.isFinite(normalized.misses)) normalized.misses = 0;
+    if (!Number.isFinite(normalized.reviewDebt)) normalized.reviewDebt = 0;
+    if (!Number.isFinite(normalized.lastSeen)) normalized.lastSeen = 0;
+    normalized.reviewDebt = Math.max(0, Math.min(MAX_REVIEW_DEBT, normalized.reviewDebt));
+    return normalized;
   }
 
   function createPersistentState(saved = null) {
     const mode = saved?.mode === "advanced" ? "advanced" : "standard";
-    return {
-      mode,
-      mastery: saved?.mastery && typeof saved.mastery === "object" ? structuredCloneSafe(saved.mastery) : {}
-    };
+    const mastery = saved?.mastery && typeof saved.mastery === "object" ? structuredCloneSafe(saved.mastery) : {};
+    Object.keys(mastery).forEach((word) => normalizeMasteryRecord(mastery[word]));
+    return { mode, mastery };
   }
 
   function createSessionState() {
@@ -43,7 +57,7 @@
 
   function masteryFor(persistent, word) {
     if (!persistent.mastery[word]) persistent.mastery[word] = blankMastery();
-    return persistent.mastery[word];
+    return normalizeMasteryRecord(persistent.mastery[word]);
   }
 
   function recalculateStage(record) {
@@ -61,6 +75,7 @@
     const record = masteryFor(persistent, word);
     if (evidence === "correct") record.correctForm += 1;
     if (evidence === "error") record.errorForm += 1;
+    record.reviewDebt = Math.max(0, record.reviewDebt - REVIEW_DEBT_RECOVERY);
     record.lastSeen = now;
     recalculateStage(record);
     return record;
@@ -69,6 +84,7 @@
   function recordMiss(persistent, word, now = Date.now()) {
     const record = masteryFor(persistent, word);
     record.misses += 1;
+    record.reviewDebt = Math.min(MAX_REVIEW_DEBT, record.reviewDebt + REVIEW_DEBT_PER_MISS);
     record.lastSeen = now;
     record.stage = Math.max(0, record.stage - 1);
     return record;
@@ -79,8 +95,8 @@
       const record = masteryFor(persistent, entry.word);
       const stageWeights = [6, 5, 2.5, 0.8];
       const hsptBoost = entry.sources.includes("hspt-core") ? 3 : 1;
-      const missBoost = Math.min(2.5, 1 + record.misses * 0.2);
-      return { entry, weight: stageWeights[record.stage] * hsptBoost * missBoost };
+      const reviewBoost = 1 + record.reviewDebt;
+      return { entry, weight: stageWeights[record.stage] * hsptBoost * reviewBoost };
     });
     const total = weighted.reduce((sum, item) => sum + item.weight, 0);
     let roll = rng() * total;
@@ -268,6 +284,9 @@
   return {
     STAGES,
     NO_MISTAKE_RATE,
+    REVIEW_DEBT_PER_MISS,
+    REVIEW_DEBT_RECOVERY,
+    MAX_REVIEW_DEBT,
     createSeededRng,
     createPersistentState,
     createSessionState,
