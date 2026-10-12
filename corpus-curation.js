@@ -52,7 +52,7 @@ const CORPUS_CURATIONS = {
     ]
   },
   novelist: {
-    misspellings: ["novellist", "novelist"]
+    misspellings: ["novellist", "novalist"]
   },
   partial: {
     sentences: [
