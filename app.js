@@ -1,5 +1,5 @@
 (() => {
-  const APP_VERSION = "0.3.2";
+  const APP_VERSION = "0.4.0";
   const SAVE_KEY = "orthomancerSave:v3";
   const LEGACY_SAVE_KEYS = ["orthomancerSave:v2"];
   const Core = window.OrthomancerCore;
