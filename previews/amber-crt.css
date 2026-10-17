@@ -1,0 +1,22 @@
+:root {
+  --bg:#090704; --screen:#120d06; --screen-2:#181006; --screen-3:#050403;
+  --line:#694715; --line-bright:#c77f24; --text:#f3c66e; --muted:#9f7740;
+  --amber:#ffad32; --amber-dim:#a86418; --cyan:#ffd486; --cyan-dim:#87662e;
+  --danger:#ff725f; --good:#b8d66c;
+}
+html,body{background:#050403}
+body{background:radial-gradient(circle at 50% -10%,rgba(255,173,50,.14),transparent 30rem),#080603;color:var(--text)}
+body::before{opacity:.2;background:repeating-linear-gradient(180deg,rgba(255,184,75,.055) 0,rgba(255,184,75,.055) 1px,transparent 1px,transparent 3px)}
+.app-shell{border-color:#b46e1d;background:linear-gradient(180deg,rgba(20,13,5,.99),rgba(7,5,3,.995));box-shadow:0 0 42px rgba(255,151,31,.1),inset 0 0 56px rgba(255,142,20,.04)}
+.app-shell::before{content:"ORTHOMANCER CRT-4 // ARCHIVE RECOVERY CONSOLE";color:#a66720;background:#070503}
+h1{color:#ffc86f;text-shadow:0 0 14px rgba(255,173,50,.28)}
+.kicker::before,.prompt::before{color:#ffda8c}
+.panel{background:#100b05;border-color:#5c3d13}
+.stat-value,.choice-letter{color:#ffb23c}
+.restoration strong{color:#ffd98f}.progress-fill{background:repeating-linear-gradient(90deg,#ffb13a 0 8px,#b66a18 8px 10px);box-shadow:0 0 12px rgba(255,173,50,.3)}
+.mode-switch button:nth-child(2).active{color:#ffe0a4;background:rgba(255,173,50,.08);box-shadow:inset 0 -2px 0 #ffcf73}
+.sentence-choice{background:#090603;border-color:#4f3512;border-left-color:#6e4816;color:#ffd88d}
+.sentence-choice:hover:not(:disabled){background:#140c04;border-color:#a76a1c;border-left-color:#ffad32;box-shadow:inset 7px 0 18px rgba(255,173,50,.06)}
+.sentence-choice.selected{background:#1a1005;border-color:#bd7a22;border-left-color:#ffd177}
+.word-token:hover{color:#fff0bb;border-bottom-color:#ffd177;background:rgba(255,194,95,.08)}
+.study-card::before{color:#a96c22}.next-button{background:#251503;border-color:#a96c22;color:#ffd994}.next-button:hover{background:#341d05;border-color:#ffad32}
