@@ -1,0 +1,23 @@
+:root {
+  --bg:#050505; --screen:#090909; --screen-2:#0d0d0d; --screen-3:#030303;
+  --line:#545454; --line-bright:#8a8a8a; --text:#f0f0f0; --muted:#a0a0a0;
+  --amber:#e8e8e8; --amber-dim:#909090; --cyan:#bdbdbd; --cyan-dim:#676767;
+  --danger:#ff7b72; --good:#b8d58b;
+}
+html,body{background:#020202}
+body{background:#050505;color:#efefef;letter-spacing:0}
+body::before{opacity:.16;background:repeating-linear-gradient(180deg,rgba(255,255,255,.04) 0,rgba(255,255,255,.04) 1px,transparent 1px,transparent 3px)}
+.app-shell{width:min(900px,calc(100% - 20px));border:2px solid #d7d7d7;background:#050505;box-shadow:none;padding:0 14px 18px}
+.app-shell::before{content:"C:\\ARCHIVE\\ORTHO.EXE    STATUS: ONLINE";margin:0 -14px 18px;padding:6px 8px;background:#d7d7d7;color:#050505;border:0;font-weight:700;letter-spacing:0;font-size:.72rem}
+header{padding:0 0 14px;border-bottom:1px solid #666}.kicker{color:#cfcfcf;letter-spacing:.08em}.kicker::before{content:"[SYS] ";color:#fff}
+h1{color:#fff;text-shadow:none;letter-spacing:-.02em}.subtitle{color:#aaa}
+.panel{background:#050505;border:1px solid #777;box-shadow:none}.panel::after{display:none}
+.stats{padding:8px 4px}.stat + .stat{border-left:1px solid #555}.stat-value{color:#fff;text-shadow:none}.stat-label{color:#aaa}
+.restoration strong{color:#fff}.progress-track{height:10px;background:#000;border-color:#777}.progress-fill{background:repeating-linear-gradient(90deg,#eee 0 7px,#555 7px 9px);box-shadow:none}
+.mode-switch{border:1px solid #777;background:#000}.mode-switch button{color:#aaa}.mode-switch button:first-child.active,.mode-switch button:nth-child(2).active{color:#000;background:#e0e0e0;box-shadow:none}.mode-switch button + button{border-left-color:#777}
+.study-card{border-color:#aaa}.study-card::before{content:"[ FRAGMENT CHECK ]";background:#050505;color:#bbb;letter-spacing:.05em}.prompt{color:#cfcfcf}.prompt::before{content:"> ";color:#fff}
+.sentences{gap:7px}.sentence-choice{border:1px solid #777;border-left:1px solid #777;background:#020202;color:#f4f4f4;padding:12px}.sentence-choice:hover:not(:disabled){background:#111;border-color:#fff;box-shadow:none}.sentence-choice.selected{background:#181818;border-color:#fff;box-shadow:none}.choice-letter{width:28px;height:28px;border:1px solid #aaa;background:#000;color:#fff}.sentence-choice.selected .choice-letter{color:#000;background:#fff;border-color:#fff}
+.no-mistakes{border-style:solid}.word-token{border-bottom:1px dotted #888}.word-token:hover{color:#fff;border-bottom-color:#fff;background:#1a1a1a}
+.feedback{border-width:1px;background:#050505!important}.feedback.correct{border-color:#b8d58b}.feedback.wrong{border-color:#ff7b72}.mastery-note{color:#ddd}
+.next-button{border:1px solid #ddd;background:#000;color:#fff;padding:9px 14px}.next-button::after{content:" [ENTER]";color:#aaa}.next-button:hover{background:#fff;color:#000;border-color:#fff}
+.footer-note{color:#777;letter-spacing:0}
