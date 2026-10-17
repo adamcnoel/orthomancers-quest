@@ -1,0 +1,22 @@
+:root {
+  --bg:#071015; --screen:#0a151b; --screen-2:#0d1b22; --screen-3:#050b0e;
+  --line:#214957; --line-bright:#3d8191; --text:#d8eef0; --muted:#7fa5aa;
+  --amber:#d8c27a; --amber-dim:#7d7040; --cyan:#72d4df; --cyan-dim:#326f78;
+  --danger:#df7d73; --good:#85c99c;
+}
+html,body{background:#050b0e}
+body{background:linear-gradient(180deg,#061014 0%,#081219 55%,#050b0e 100%);color:var(--text)}
+body::before{opacity:.08;background:repeating-linear-gradient(90deg,rgba(114,212,223,.05) 0,rgba(114,212,223,.05) 1px,transparent 1px,transparent 5px)}
+.app-shell{border-color:#376f7d;background:linear-gradient(180deg,rgba(9,22,28,.99),rgba(5,13,17,.995));box-shadow:0 18px 55px rgba(0,0,0,.5),inset 0 0 42px rgba(114,212,223,.025)}
+.app-shell::before{content:"CATALOG NODE 07 // CORRUPTED TEXT INDEX";color:#4f8792;background:#051015;border-bottom-color:#214957}
+header{border-bottom-color:#1d414c}.kicker{color:#d8c27a}.kicker::before{color:#72d4df}
+h1{color:#e4f7f8;text-shadow:0 0 18px rgba(114,212,223,.12)}
+.panel{background:linear-gradient(180deg,rgba(12,28,35,.97),rgba(7,17,22,.99));border-color:#214957}
+.stat + .stat{border-left-color:#18353e}.stat-value{color:#72d4df}.restoration strong{color:#d8c27a}
+.progress-track{border-color:#214957}.progress-fill{background:repeating-linear-gradient(90deg,#72d4df 0 8px,#326f78 8px 10px);box-shadow:0 0 10px rgba(114,212,223,.28)}
+.mode-switch{border-color:#28515d;background:#050d11}.mode-switch button:first-child.active{color:#eadb9e;background:rgba(216,194,122,.08);box-shadow:inset 0 -2px 0 #d8c27a}.mode-switch button:nth-child(2).active{color:#bdf3f7;background:rgba(114,212,223,.12);box-shadow:inset 0 -2px 0 #72d4df}
+.study-card{border-color:#356b78}.study-card::before{content:"CATALOG ENTRY / FRAGMENT ANALYSIS";color:#4f8792}.prompt::before{content:"IDX> ";color:#72d4df}
+.sentence-choice{background:#061015;border-color:#1c3a43;border-left-color:#28515d;color:#d8eef0}.sentence-choice:hover:not(:disabled){background:#0a1920;border-color:#376f7d;border-left-color:#72d4df;box-shadow:inset 6px 0 18px rgba(114,212,223,.045)}
+.choice-letter{background:#09181e;border-color:#326f78;color:#72d4df}.sentence-choice.selected{background:#0b1d24;border-color:#3a7c8b;border-left-color:#8be9f1}.sentence-choice.selected .choice-letter{color:#e7fbfd;border-color:#4a97a7;background:#0a2028}
+.word-token:hover{color:#bdf3f7;border-bottom-color:#72d4df;background:rgba(114,212,223,.06)}
+.next-button{background:#0b2027;border-color:#326f78;color:#c8eef1}.next-button::after{color:#72d4df}.next-button:hover{background:#0f2b34;border-color:#72d4df}
