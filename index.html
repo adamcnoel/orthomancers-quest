@@ -5,11 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#090704">
   <title>Orthomancer's Quest</title>
-  <link rel="stylesheet" href="style.css?v=0.4.0">
-  <link rel="stylesheet" href="focus-terminal.css?v=1">
+  <link rel="stylesheet" href="style.css?app=orthomancer&v=0.5.0">
+  <link rel="stylesheet" href="focus-terminal.css?app=orthomancer&v=0.5.0">
 </head>
-<body>
+<body class="booting">
   <main class="app-shell">
+    <div class="boot-status" id="boot-status" role="status">Loading archive…</div>
+
     <div class="focus-top">
       <header>
         <div class="kicker">The Corrupted Archive</div>
@@ -20,13 +22,20 @@
           <button id="mode-standard" type="button">Standard</button>
           <button id="mode-advanced" type="button">Advanced</button>
         </div>
-        <button class="reset-button" id="reset-progress" type="button">Reset progress</button>
+        <button class="reset-button" id="reset-archive" type="button">Reset archive</button>
       </div>
     </div>
 
     <p class="subtitle">Inspect each fragment for spelling corruption. Restore the archive one word at a time.</p>
 
-    <section class="panel study-card" aria-live="polite">
+    <section class="panel home-card hidden" id="home-card" aria-live="polite">
+      <div class="home-kicker" id="home-kicker">Archive status</div>
+      <h2 id="home-title">Archive ready.</h2>
+      <p id="home-detail"></p>
+      <button class="next-button home-start" id="begin-study" type="button">Begin study</button>
+    </section>
+
+    <section class="panel study-card hidden" id="study-card" aria-live="polite">
       <p class="prompt" id="prompt"></p>
       <div class="sentences" id="sentences"></div>
       <div class="feedback hidden" id="feedback"></div>
@@ -69,9 +78,10 @@
     <p class="footer-note"><span id="build-version">Build loading…</span> · <span id="corpus-status">Corpus loading…</span></p>
   </main>
 
-  <script src="words.js?v=0.4.0"></script>
-  <script src="corpus-curation.js?v=0.4.0"></script>
-  <script src="game-core.js?v=0.4.0"></script>
-  <script src="app.js?v=0.4.0"></script>
+  <script src="words.js?app=orthomancer&v=0.5.0"></script>
+  <script src="corpus-curation.js?app=orthomancer&v=0.5.0"></script>
+  <script src="game-core.js?app=orthomancer&v=0.5.0"></script>
+  <script src="startup-state.js?app=orthomancer&v=0.5.0"></script>
+  <script src="app.js?app=orthomancer&v=0.5.0"></script>
 </body>
 </html>

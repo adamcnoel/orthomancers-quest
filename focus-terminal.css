@@ -24,12 +24,21 @@ h1{color:#ffc86f;text-shadow:0 0 14px rgba(255,173,50,.28)}
 .next-button{background:#251503;border-color:#a96c22;color:#ffd994}
 .next-button:hover{background:#341d05;border-color:#ffad32}
 
+.boot-status{min-height:160px;display:grid;place-items:center;color:#8d6a39;font-size:.74rem;letter-spacing:.14em;text-transform:uppercase}
+body.booting .focus-top,body.booting .subtitle,body.booting .home-card,body.booting .study-card,body.booting .focus-status,body.booting .footer-note{display:none!important}
+
 .focus-top{display:flex;justify-content:space-between;gap:18px;align-items:end;border-bottom:1px dashed #4b3110;padding-bottom:10px}
 .focus-top header{margin:0;padding:0;border:0}
 .focus-top .kicker{margin-bottom:5px}
 .focus-top h1{font-size:clamp(1.45rem,4vw,2.3rem);margin:0}
 .focus-top .controls{margin:0;flex:0 0 auto}
 .subtitle{margin:9px 0 14px;font-size:.76rem;color:#8d6a39}
+.home-card{padding:18px;border-color:#7a5019;min-height:210px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center}
+.home-card::before{content:"SESSION GATE";position:absolute;top:-7px;left:14px;padding:0 7px;background:#120d06;color:#a96c22;font-size:.62rem;letter-spacing:.13em}
+.home-kicker{color:#a96c22;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px}
+.home-card h2{margin:0 0 9px;color:#ffc86f;font-size:1.25rem}
+.home-card p{margin:0 0 16px;max-width:650px;color:#b58a4c;font-size:.82rem;line-height:1.55}
+.home-start{align-self:flex-start}
 .study-card{padding:14px;border-color:#7a5019}
 .study-card::before{content:"ACTIVE FRAGMENT";top:-7px}
 .prompt{margin:0 0 10px;padding:7px 9px;background:#0a0603;border-left:2px solid #a4681d;color:#c19350}
@@ -48,5 +57,5 @@ h1{color:#ffc86f;text-shadow:0 0 14px rgba(255,173,50,.28)}
 .stats-strip .stat-value{font-size:.92rem}
 .stats-strip .stat-label{font-size:.55rem}
 .footer-note{margin-top:8px}
-@media(max-width:700px){.focus-top{display:block}.focus-top .controls{margin-top:10px}.focus-status{grid-template-columns:1fr}.stats-strip{order:-1}.subtitle{font-size:.72rem}}
+@media(max-width:700px){.focus-top{display:block}.focus-top .controls{margin-top:10px}.focus-status{grid-template-columns:1fr}.stats-strip{order:-1}.subtitle{font-size:.72rem}.home-card{min-height:190px}}
 @media(max-width:460px){.app-shell{width:calc(100% - 10px)}.focus-top .controls{flex-direction:column}.sentence-choice{padding:12px 10px}.sentence-text{font-size:.9rem}.stats-strip .stat-label{font-size:.5rem}}

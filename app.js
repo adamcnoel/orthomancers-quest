@@ -1,13 +1,16 @@
 (() => {
-  const APP_VERSION = "0.4.0";
+  const APP_VERSION = "0.5.0";
   const SAVE_KEY = "orthomancerSave:v3";
   const LEGACY_SAVE_KEYS = ["orthomancerSave:v2"];
   const Core = window.OrthomancerCore;
+  const Startup = window.OrthomancerStartup;
 
   const state = {
     persistent: null,
     session: Core.createSessionState(),
-    flow: Core.createFlowState()
+    flow: Core.createFlowState(),
+    startupStatus: "fresh",
+    screen: "home"
   };
 
   const els = {};
@@ -17,14 +20,19 @@
   }
 
   function loadPersistent() {
-    let raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) {
-      for (const key of LEGACY_SAVE_KEYS) {
-        raw = localStorage.getItem(key);
-        if (raw) break;
-      }
+    const currentRaw = localStorage.getItem(SAVE_KEY);
+    const legacyEntries = LEGACY_SAVE_KEYS.map((key) => ({ key, raw: localStorage.getItem(key) }));
+    const resolved = Startup.resolvePersistentSave(currentRaw, legacyEntries);
+
+    state.startupStatus = resolved.status;
+    state.persistent = Core.createPersistentState(resolved.parsed);
+
+    if (resolved.status === "migrated") {
+      savePersistent();
+      if (resolved.legacyKey) localStorage.removeItem(resolved.legacyKey);
+    } else if (resolved.status === "recovered") {
+      savePersistent();
     }
-    state.persistent = Core.parsePersistent(raw);
   }
 
   function savePersistent() {
@@ -43,6 +51,7 @@
     els.masteredTotal.textContent = SPELLING_WORDS.length;
     els.restorationPercent.textContent = `${summary.percent}%`;
     els.restorationFill.style.width = `${summary.percent}%`;
+    return summary;
   }
 
   function updateModeButtons() {
@@ -68,6 +77,65 @@
     updateModeButtons();
     updatePrompt();
     savePersistent();
+    if (state.startupStatus === "fresh") state.startupStatus = "returning";
+  }
+
+  function renderHome() {
+    state.screen = "home";
+    els.studyCard.classList.add("hidden");
+    els.homeCard.classList.remove("hidden");
+    const summary = updateStats();
+
+    const copy = {
+      fresh: {
+        kicker: "New archive",
+        title: "Archive ready.",
+        detail: "Your HSPT spelling archive is ready to restore. Progress will be saved on this device once you begin.",
+        action: "Begin restoration"
+      },
+      returning: {
+        kicker: "Archive restored",
+        title: `${summary.percent}% restored.`,
+        detail: "Saved mastery is loaded. This is a new study session, so session accuracy and streak begin at zero.",
+        action: "Begin study"
+      },
+      migrated: {
+        kicker: "Archive upgraded",
+        title: `${summary.percent}% restored.`,
+        detail: "Your earlier Orthomancer save was upgraded. Mastery was preserved; transient question state was not.",
+        action: "Begin study"
+      },
+      recovered: {
+        kicker: "Archive recovered",
+        title: "A damaged save was replaced.",
+        detail: "The saved data could not be read safely, so Orthomancer initialized a clean archive instead of guessing at progress.",
+        action: "Begin restoration"
+      },
+      reset: {
+        kicker: "Archive reset",
+        title: "Restoration progress cleared.",
+        detail: "All word mastery and session progress were cleared. Your Standard/Advanced preference was kept.",
+        action: "Begin restoration"
+      }
+    }[state.startupStatus] || null;
+
+    els.homeKicker.textContent = copy.kicker;
+    els.homeTitle.textContent = copy.title;
+    els.homeDetail.textContent = copy.detail;
+    els.beginStudy.textContent = copy.action;
+    els.beginStudy.focus();
+  }
+
+  function beginStudy() {
+    state.screen = "study";
+    els.homeCard.classList.add("hidden");
+    els.studyCard.classList.remove("hidden");
+    if (state.flow.phase === "idle") Core.startQuestion(state.flow, SPELLING_WORDS, state.persistent);
+    savePersistent();
+    if (state.startupStatus === "fresh" || state.startupStatus === "recovered" || state.startupStatus === "reset") {
+      state.startupStatus = "returning";
+    }
+    renderQuestion();
   }
 
   function renderQuestion() {
@@ -199,14 +267,25 @@
     updateStats();
   }
 
-  function resetProgress() {
-    if (!confirm("Reset all mastery progress for this browser?")) return;
+  function resetArchive() {
+    const confirmed = confirm(
+      "Reset the archive? This permanently clears all word mastery and current session progress on this device. Your Standard/Advanced preference will be kept."
+    );
+    if (!confirmed) return;
     Core.resetAll(state.persistent, state.session, state.flow);
+    state.startupStatus = "reset";
     savePersistent();
-    startQuestion();
+    renderHome();
   }
 
   function bind() {
+    els.bootStatus = $("boot-status");
+    els.homeCard = $("home-card");
+    els.homeKicker = $("home-kicker");
+    els.homeTitle = $("home-title");
+    els.homeDetail = $("home-detail");
+    els.beginStudy = $("begin-study");
+    els.studyCard = $("study-card");
     els.sentences = $("sentences");
     els.prompt = $("prompt");
     els.feedback = $("feedback");
@@ -223,12 +302,18 @@
     els.buildVersion = $("build-version");
     els.corpusStatus = $("corpus-status");
 
+    els.beginStudy.addEventListener("click", beginStudy);
     els.nextButton.addEventListener("click", startQuestion);
     els.modeStandard.addEventListener("click", () => setMode("standard"));
     els.modeAdvanced.addEventListener("click", () => setMode("advanced"));
-    $("reset-progress").addEventListener("click", resetProgress);
+    $("reset-archive").addEventListener("click", resetArchive);
 
     document.addEventListener("keydown", (event) => {
+      if (state.screen === "home" && event.key === "Enter") {
+        beginStudy();
+        return;
+      }
+      if (state.screen !== "study") return;
       if (state.flow.phase === "feedback" && event.key === "Enter") {
         startQuestion();
         return;
@@ -247,10 +332,10 @@
     const hsptCount = SPELLING_WORDS.filter((entry) => entry.sources.includes("hspt-core")).length;
     els.corpusStatus.textContent = `${SPELLING_WORDS.length} words loaded · ${hsptCount} HSPT-core`;
     updateModeButtons();
-    SPELLING_WORDS.forEach((entry) => Core.masteryFor(state.persistent, entry.word));
-    savePersistent();
-    startQuestion();
+    renderHome();
+    els.bootStatus.classList.add("hidden");
+    document.body.classList.remove("booting");
   }
 
-  window.addEventListener("DOMContentLoaded", init);
+  window.addEventListener("DOMContentLoaded", init, { once: true });
 })();
