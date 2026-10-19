@@ -1,11 +1,12 @@
 const assert = require("assert");
 const Core = require("../game-core.js");
 
+const alpha = i => String.fromCharCode(97 + Math.floor(i / 26)) + String.fromCharCode(97 + i % 26);
 const WORDS = Array.from({length: 140}, (_, i) => ({
-  word: "word" + i,
+  word: "word" + alpha(i),
   sources: ["hspt-core"],
-  misspellings: ["wrod" + i],
-  sentences: ["The word" + i + " appears here.", "Here is word" + i + "."]
+  misspellings: ["wrod" + alpha(i)],
+  sentences: ["The word" + alpha(i) + " appears here.", "Here is word" + alpha(i) + "."]
 }));
 const SEEDS = [1, 2, 7, 42, 101, 777, 12345, 424242, 999991, 4294967295];
 const SIZES = [3, 4, 5, 6, 7, 8, 9, 10, 12, 40, 140];
