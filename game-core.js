@@ -8,6 +8,7 @@
   const REVIEW_DEBT_PER_MISS = 0.4;
   const REVIEW_DEBT_RECOVERY = 0.25;
   const MAX_REVIEW_DEBT = 1.5;
+  const RECENT_QUESTION_WINDOW = 2;
 
   function createSeededRng(seed = 1) {
     let value = (seed >>> 0) || 1;
@@ -48,7 +49,7 @@
   }
 
   function createFlowState() {
-    return { phase: "idle", question: null, selectedSentence: null, selectedWord: null, feedback: null };
+    return { phase: "idle", question: null, selectedSentence: null, selectedWord: null, feedback: null, recentTargets: [] };
   }
 
   function structuredCloneSafe(value) {
@@ -107,8 +108,16 @@
     return weighted[weighted.length - 1].entry;
   }
 
-  function pickThreeTargets(words, persistent, rng) {
-    const available = [...words];
+  function pickThreeTargets(words, persistent, rng, recentTargets = []) {
+    if (words.length < 3) throw new RangeError("At least three spelling targets are required");
+    // Exclude both clean and corrupted targets from the last two questions.
+    // For small pools, relax the oldest exclusion first; never exhaust the pool.
+    let available = [...words];
+    for (let window = Math.min(RECENT_QUESTION_WINDOW, recentTargets.length); window >= 0; window--) {
+      const blocked = new Set(recentTargets.slice(-window).flat());
+      const eligible = words.filter(entry => !blocked.has(entry.word));
+      if (eligible.length >= 3) { available = eligible; break; }
+    }
     const result = [];
     while (result.length < 3) {
       const picked = weightedPick(available, persistent, rng);
@@ -138,7 +147,7 @@
 
   function buildQuestion(words, persistent, rng = Math.random, options = {}) {
     const noMistakeRate = options.noMistakeRate ?? NO_MISTAKE_RATE;
-    const targets = pickThreeTargets(words, persistent, rng);
+    const targets = pickThreeTargets(words, persistent, rng, options.recentTargets || []);
     const hasError = rng() >= noMistakeRate;
     const errorIndex = hasError ? Math.floor(rng() * 3) : -1;
     const sentences = targets.map((target, index) => {
@@ -161,7 +170,10 @@
   function startQuestion(flow, words, persistent, rng = Math.random, options = {}) {
     if (flow.phase !== "idle" && flow.phase !== "feedback") return false;
     flow.phase = "question";
-    flow.question = buildQuestion(words, persistent, rng, options);
+    flow.question = buildQuestion(words, persistent, rng, { ...options, recentTargets: flow.recentTargets || [] });
+    if (!Array.isArray(flow.recentTargets)) flow.recentTargets = [];
+    flow.recentTargets.push(flow.question.sentences.map(sentence => sentence.target.word));
+    if (flow.recentTargets.length > RECENT_QUESTION_WINDOW) flow.recentTargets.shift();
     flow.selectedSentence = null;
     flow.selectedWord = null;
     flow.feedback = null;
@@ -254,6 +266,7 @@
     flow.selectedSentence = null;
     flow.selectedWord = null;
     flow.feedback = null;
+    flow.recentTargets = [];
   }
 
   function stageSummary(words, persistent) {
@@ -287,6 +300,7 @@
     REVIEW_DEBT_PER_MISS,
     REVIEW_DEBT_RECOVERY,
     MAX_REVIEW_DEBT,
+    RECENT_QUESTION_WINDOW,
     createSeededRng,
     createPersistentState,
     createSessionState,
