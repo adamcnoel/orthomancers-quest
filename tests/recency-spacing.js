@@ -42,7 +42,7 @@ function run(seed, size, mode, count) {
     // The scheduler should exclude as much recent history as the pool allows.
     let expectedWindow = 0;
     for (let window = Math.min(2, previous.length); window >= 0; window--) {
-      const blocked = new Set(previous.slice(-window).flat());
+      const blocked = new Set(window ? previous.slice(-window).flat() : []);
       if (words.filter(word => !blocked.has(word.word)).length >= 3) {
         expectedWindow = window;
         for (const word of blocked) excluded.add(word);
