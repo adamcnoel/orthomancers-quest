@@ -114,7 +114,7 @@
     // For small pools, relax the oldest exclusion first; never exhaust the pool.
     let available = [...words];
     for (let window = Math.min(RECENT_QUESTION_WINDOW, recentTargets.length); window >= 0; window--) {
-      const blocked = new Set(recentTargets.slice(-window).flat());
+      const blocked = new Set(window ? recentTargets.slice(-window).flat() : []);
       const eligible = words.filter(entry => !blocked.has(entry.word));
       if (eligible.length >= 3) { available = eligible; break; }
     }
